@@ -1,6 +1,7 @@
 import time
 import requests
 import json
+import base64
 import runpod
 from runpod.serverless.utils.rp_validator import validate
 from runpod.serverless.modules.rp_logger import RunPodLogger
@@ -93,7 +94,20 @@ def handler(event):
 
                 time.sleep(0.2)
 
-            output_images = resp_json[prompt_id]['outputs']['9']['images']
+            image_filenames = resp_json[prompt_id]['outputs']['9']['images']
+            images = []
+
+            for image_filename in image_filenames:
+                filename = image_filename['filename']
+                image_path = f'/runpod-volume/ComfyUI/output/{filename}'
+
+                with open(image_path, 'rb') as image_file:
+                    images.append(base64.b64encode(image_file.read()).decode('utf-8'))
+
+            return {
+                'status': 'ok',
+                'images': images
+            }
         else:
             logger.error(f'HTTP Status code: {queue_response.status_code}')
             logger.error(json.dumps(resp_json, indent=4, default=str))
