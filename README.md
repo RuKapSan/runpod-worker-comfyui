@@ -4,6 +4,18 @@ This is the source code for a [RunPod](https://runpod.io?ref=2xxro4sy)
 Serverless worker that uses the [ComfyUI API](
 https://github.com/comfyanonymous/ComfyUI) for inference.
 
+## Model
+
+The model(s) for inference will be loaded from a RunPod
+Network Volume.
+
+## Installing, Building and Deploying the Serverless Worker
+
+1. [Install ComfyUI on your Network Volume](
+   docs/installing.md)
+2. [Building the Docker image](docs/building.md)
+3. [Deploying on RunPod Serveless](docs/deploying.md)
+
 ## RunPod API Endpoint
 
 You can send requests to your RunPod API Endpoint using the `/run`
