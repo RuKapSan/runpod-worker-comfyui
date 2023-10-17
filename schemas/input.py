@@ -1,6 +1,6 @@
 INPUT_SCHEMA = {
     'prompt': {
-        'type': str,
+        'type': dict,
         'required': True
     }
 }

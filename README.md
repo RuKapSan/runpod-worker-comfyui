@@ -9,6 +9,11 @@ https://github.com/comfyanonymous/ComfyUI) for inference.
 The model(s) for inference will be loaded from a RunPod
 Network Volume.
 
+## Testing
+
+1. [Local Testing](docs/testing/local.md)
+2. [RunPod Testing](docs/testing/runpod.md)
+
 ## Installing, Building and Deploying the Serverless Worker
 
 1. [Install ComfyUI on your Network Volume](

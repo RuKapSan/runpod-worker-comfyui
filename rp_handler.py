@@ -1,3 +1,4 @@
+import os.path
 import time
 import requests
 import json
@@ -10,6 +11,7 @@ from schemas.input import INPUT_SCHEMA
 
 
 BASE_URI = 'http://127.0.0.1:3000'
+VOLUME_MOUNT_PATH = '/runpod-volume'
 TIMEOUT = 600
 
 session = requests.Session()
@@ -72,7 +74,7 @@ def handler(event):
         logger.debug('Queuing prompt')
 
         queue_response = send_post_request(
-            f'{BASE_URI}/prompt',
+            'prompt',
             {
                 'prompt': payload['prompt']
             }
@@ -86,7 +88,7 @@ def handler(event):
 
             while True:
                 logger.info(f'Getting status of prompt: {prompt_id}')
-                r = send_get_request(f"{BASE_URI}/history/{prompt_id}")
+                r = send_get_request(f'history/{prompt_id}')
                 resp_json = r.json()
 
                 if r.status_code == 200 and len(resp_json):
@@ -99,7 +101,7 @@ def handler(event):
 
             for image_filename in image_filenames:
                 filename = image_filename['filename']
-                image_path = f'/runpod-volume/ComfyUI/output/{filename}'
+                image_path = f'{VOLUME_MOUNT_PATH}/ComfyUI/output/{filename}'
 
                 with open(image_path, 'rb') as image_file:
                     images.append(base64.b64encode(image_file.read()).decode('utf-8'))
@@ -119,7 +121,7 @@ def handler(event):
         }
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     wait_for_service(url=f'{BASE_URI}/system_stats')
     logger.info('ComfyUI API is ready')
     logger.info('Starting RunPod Serverless...')
