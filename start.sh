@@ -13,9 +13,7 @@ export LD_PRELOAD="${TCMALLOC}"
 export PYTHONUNBUFFERED=true
 export HF_HOME="/workspace"
 cd /workspace/ComfyUI
-python main.py \
-  --port 3000 \
-  --no-download-sd-model > /workspace/logs/comfyui.log 2>&1 &
+python main.py --port 3000 > /workspace/logs/comfyui.log 2>&1 &
 deactivate
 
 echo "Starting RunPod Handler"
