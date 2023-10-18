@@ -43,7 +43,12 @@ RUN pip install requests runpod
 
 # Add RunPod Handler and Docker container start script
 COPY start.sh rp_handler.py ./
+
+# Add validation schemas
 COPY schemas /schemas
+
+# Add workflows
+COPY workflows /workflows
 
 # Start the container
 RUN chmod +x /start.sh
