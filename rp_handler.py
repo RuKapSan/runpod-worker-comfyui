@@ -87,7 +87,7 @@ def handler(event):
             logger.info(f'Prompt queued successfully: {prompt_id}')
 
             while True:
-                logger.info(f'Getting status of prompt: {prompt_id}')
+                logger.debug(f'Getting status of prompt: {prompt_id}')
                 r = send_get_request(f'history/{prompt_id}')
                 resp_json = r.json()
 
