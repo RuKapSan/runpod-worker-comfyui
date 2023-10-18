@@ -72,7 +72,7 @@ def get_txt2img_payload(workflow, payload):
 
 
 def get_workflow_payload(workflow_name, payload):
-    with open(f'workflows/{workflow_name}.json', 'r') as json_file:
+    with open(f'/workflows/{workflow_name}.json', 'r') as json_file:
         workflow = json.load(json_file)
 
     if workflow_name == 'txt2img':
