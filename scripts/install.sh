@@ -27,6 +27,11 @@ pip3 install --no-cache-dir xformers==0.0.22
 echo "Installing ComfyUI"
 pip3 install -r requirements.txt
 
+echo "Installing ComfyUI Manager"
+git clone https://github.com/ltdrdata/ComfyUI-Manager.git custom_nodes/ComfyUI-Manager
+cd custom_nodes/ComfyUI-Manager
+pip3 install -r requirements.txt
+
 echo "Installing RunPod Serverless dependencies"
 pip3 install huggingface_hub runpod
 

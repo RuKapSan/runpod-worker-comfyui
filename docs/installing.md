@@ -51,6 +51,11 @@ pip3 install --no-cache-dir xformers==0.0.22
 
 # Install ComfyUI
 pip3 install -r requirements.txt
+
+# Installing ComfyUI Manager
+git clone https://github.com/ltdrdata/ComfyUI-Manager.git custom_nodes/ComfyUI-Manager
+cd custom_nodes/ComfyUI-Manager
+pip3 install -r requirements.txt
 ```
 2. Install the Serverless dependencies:
 ```bash
