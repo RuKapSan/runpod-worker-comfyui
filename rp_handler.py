@@ -57,6 +57,29 @@ def send_post_request(endpoint, payload):
         timeout=TIMEOUT
     )
 
+def get_txt2img_payload(workflow, payload):
+    workflow["3"]["inputs"]["seed"] = payload["seed"]
+    workflow["3"]["inputs"]["steps"] = payload["steps"]
+    workflow["3"]["inputs"]["cfg"] = payload["cfg_scale"]
+    workflow["3"]["inputs"]["sampler_name"] = payload["sampler_name"]
+    workflow["4"]["inputs"]["ckpt_name"] = payload["ckpt_name"]
+    workflow["5"]["inputs"]["batch_size"] = payload["batch_size"]
+    workflow["5"]["inputs"]["width"] = payload["width"]
+    workflow["5"]["inputs"]["height"] = payload["height"]
+    workflow["6"]["inputs"]["text"] = payload["prompt"]
+    workflow["7"]["inputs"]["text"] = payload["negative_prompt"]
+    return workflow
+
+
+def get_workflow_payload(workflow_name, payload):
+    with open(f'workflows/{workflow_name}.json', 'r') as json_file:
+        workflow = json.load(json_file)
+
+    if workflow_name == 'txt2img':
+        workflow = get_txt2img_payload(workflow, payload)
+
+    return workflow
+
 
 # ---------------------------------------------------------------------------- #
 #                                RunPod Handler                                #
@@ -71,12 +94,27 @@ def handler(event):
             }
 
         payload = validated_input['validated_input']
+        workflow_name = payload['workflow']
+        payload = payload['payload']
+
+        if workflow_name == 'default':
+            workflow_name = 'txt2img'
+
+        logger.info(f'Workflow: {workflow_name}')
+
+        if workflow_name != 'custom':
+            try:
+                payload = get_workflow_payload(workflow_name, payload)
+            except Exception as e:
+                logger.error(f'Unable to load workflow payload for: {workflow_name}')
+                raise
+
         logger.debug('Queuing prompt')
 
         queue_response = send_post_request(
             'prompt',
             {
-                'prompt': payload['prompt']
+                'prompt': payload
             }
         )
 
@@ -96,6 +134,7 @@ def handler(event):
 
                 time.sleep(0.2)
 
+            logger.info(f'Images generated successfully for prompt: {prompt_id}')
             image_filenames = resp_json[prompt_id]['outputs']['9']['images']
             images = []
 
@@ -113,6 +152,7 @@ def handler(event):
         else:
             logger.error(f'HTTP Status code: {queue_response.status_code}')
             logger.error(json.dumps(resp_json, indent=4, default=str))
+            return resp_json
     except Exception as e:
         logger.error(str(e))
         return {

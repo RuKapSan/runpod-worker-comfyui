@@ -94,7 +94,11 @@ def post_request(payload):
 
                     if r.status_code == 200:
                         resp_json = r.json()
-                        job_status = resp_json['status']
+
+                        if 'status' in resp_json:
+                            job_status = resp_json['status']
+                        else:
+                            job_status = 'FAILED'
 
                         if job_status == 'IN_QUEUE' or job_status == 'IN_PROGRESS':
                             print(f'RunPod request {request_id} is {job_status}, sleeping for 5 seconds...')
