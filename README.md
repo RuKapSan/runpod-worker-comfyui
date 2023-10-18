@@ -71,6 +71,7 @@ in the JSON response.
 
 ## Additional Resources
 
+- [Postman Collection for this Worker](RunPod_ComfyUI_Worker.postman_collection.json)
 - [Generative Labs YouTube Tutorials](https://www.youtube.com/@generativelabs)
 - [Getting Started With RunPod Serverless](https://trapdoor.cloud/getting-started-with-runpod-serverless/)
 - [Serverless | Create a Custom Basic API](https://blog.runpod.io/serverless-create-a-basic-api/)

@@ -36,7 +36,7 @@ if __name__ == '__main__':
                 "4": {
                     "class_type": "CheckpointLoaderSimple",
                     "inputs": {
-                        "ckpt_name": "v1-5-pruned.safetensors"
+                        "ckpt_name": "deliberate_v2.safetensors"
                     }
                 },
                 "5": {
