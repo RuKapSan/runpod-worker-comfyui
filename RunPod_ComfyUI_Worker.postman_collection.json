@@ -151,7 +151,7 @@
 			"response": []
 		},
 		{
-			"name": "Text to Image (sync)",
+			"name": "Text to Image Workflow (sync)",
 			"event": [
 				{
 					"listen": "test",
@@ -190,7 +190,66 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"input\": {\n        \"prompt\": {\n            \"3\": {\n                \"class_type\": \"KSampler\",\n                \"inputs\": {\n                    \"cfg\": 8,\n                    \"denoise\": 1,\n                    \"latent_image\": [\n                        \"5\",\n                        0\n                    ],\n                    \"model\": [\n                        \"4\",\n                        0\n                    ],\n                    \"negative\": [\n                        \"7\",\n                        0\n                    ],\n                    \"positive\": [\n                        \"6\",\n                        0\n                    ],\n                    \"sampler_name\": \"euler\",\n                    \"scheduler\": \"normal\",\n                    \"seed\": 965442,\n                    \"steps\": 20\n                }\n            },\n            \"4\": {\n                \"class_type\": \"CheckpointLoaderSimple\",\n                \"inputs\": {\n                    \"ckpt_name\": \"v1-5-pruned.safetensors\"\n                }\n            },\n            \"5\": {\n                \"class_type\": \"EmptyLatentImage\",\n                \"inputs\": {\n                    \"batch_size\": 1,\n                    \"height\": 512,\n                    \"width\": 512\n                }\n            },\n            \"6\": {\n                \"class_type\": \"CLIPTextEncode\",\n                \"inputs\": {\n                    \"clip\": [\n                        \"4\",\n                        1\n                    ],\n                    \"text\": \"masterpiece best quality man wearing a hat\"\n                }\n            },\n            \"7\": {\n                \"class_type\": \"CLIPTextEncode\",\n                \"inputs\": {\n                    \"clip\": [\n                        \"4\",\n                        1\n                    ],\n                    \"text\": \"bad hands\"\n                }\n            },\n            \"8\": {\n                \"class_type\": \"VAEDecode\",\n                \"inputs\": {\n                    \"samples\": [\n                        \"3\",\n                        0\n                    ],\n                    \"vae\": [\n                        \"4\",\n                        2\n                    ]\n                }\n            },\n            \"9\": {\n                \"class_type\": \"SaveImage\",\n                \"inputs\": {\n                    \"filename_prefix\": \"RUNPOD\",\n                    \"images\": [\n                        \"8\",\n                        0\n                    ]\n                }\n            }\n        }\n    }\n}"
+					"raw": "{\n    \"input\": {\n        \"workflow\": \"txt2img\",\n        \"payload\": {\n            \"seed\": 289363,\n            \"steps\": 20,\n            \"cfg_scale\": 8,\n            \"sampler_name\": \"euler\",\n            \"ckpt_name\": \"deliberate_v2.safetensors\",\n            \"batch_size\": 1,\n            \"width\": 512,\n            \"height\": 512,\n            \"prompt\": \"masterpiece best quality man wearing a hat\",\n            \"negative_prompt\": \"bad hands\"\n        }\n    }\n}"
+				},
+				"url": {
+					"raw": "https://api.runpod.ai/v2/{{serverless_api_id}}/runsync",
+					"protocol": "https",
+					"host": [
+						"api",
+						"runpod",
+						"ai"
+					],
+					"path": [
+						"v2",
+						"{{serverless_api_id}}",
+						"runsync"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Custom Workflow (sync)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"try {",
+							"    let template = `<div style='font-weight:bold;'>{{status}}</div>",
+							"    <img src='data:image/png;base64, {{img}}'/>",
+							"    `;",
+							"",
+							"    pm.visualizer.set(template, { ",
+							"        img: pm.response.json()[\"output\"][\"images\"][0],",
+							"        status: pm.response.json()[\"status\"]",
+							"    });",
+							"} catch(e) {",
+							"    //console.log(\"Couldn't yet load template.\")",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "default"
+					},
+					{
+						"key": "Authorization",
+						"value": "Bearer {{api_key}}",
+						"type": "default"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"input\": {\n        \"workflow\": \"custom\",\n        \"payload\": {\n            \"3\": {\n                \"class_type\": \"KSampler\",\n                \"inputs\": {\n                    \"cfg\": 8,\n                    \"denoise\": 1,\n                    \"latent_image\": [\n                        \"5\",\n                        0\n                    ],\n                    \"model\": [\n                        \"4\",\n                        0\n                    ],\n                    \"negative\": [\n                        \"7\",\n                        0\n                    ],\n                    \"positive\": [\n                        \"6\",\n                        0\n                    ],\n                    \"sampler_name\": \"euler\",\n                    \"scheduler\": \"normal\",\n                    \"seed\": 900532,\n                    \"steps\": 20\n                }\n            },\n            \"4\": {\n                \"class_type\": \"CheckpointLoaderSimple\",\n                \"inputs\": {\n                    \"ckpt_name\": \"deliberate_v2.safetensors\"\n                }\n            },\n            \"5\": {\n                \"class_type\": \"EmptyLatentImage\",\n                \"inputs\": {\n                    \"batch_size\": 1,\n                    \"height\": 512,\n                    \"width\": 512\n                }\n            },\n            \"6\": {\n                \"class_type\": \"CLIPTextEncode\",\n                \"inputs\": {\n                    \"clip\": [\n                        \"4\",\n                        1\n                    ],\n                    \"text\": \"masterpiece best quality man wearing a hat\"\n                }\n            },\n            \"7\": {\n                \"class_type\": \"CLIPTextEncode\",\n                \"inputs\": {\n                    \"clip\": [\n                        \"4\",\n                        1\n                    ],\n                    \"text\": \"bad hands\"\n                }\n            },\n            \"8\": {\n                \"class_type\": \"VAEDecode\",\n                \"inputs\": {\n                    \"samples\": [\n                        \"3\",\n                        0\n                    ],\n                    \"vae\": [\n                        \"4\",\n                        2\n                    ]\n                }\n            },\n            \"9\": {\n                \"class_type\": \"SaveImage\",\n                \"inputs\": {\n                    \"filename_prefix\": \"RUNPOD\",\n                    \"images\": [\n                        \"8\",\n                        0\n                    ]\n                }\n            }\n        }\n    }\n}"
 				},
 				"url": {
 					"raw": "https://api.runpod.ai/v2/{{serverless_api_id}}/runsync",
