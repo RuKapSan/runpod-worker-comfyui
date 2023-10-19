@@ -146,7 +146,6 @@ def handler(event):
                     images.append(base64.b64encode(image_file.read()).decode('utf-8'))
 
             return {
-                'status': 'ok',
                 'images': images
             }
         else:
@@ -154,11 +153,7 @@ def handler(event):
             logger.error(json.dumps(resp_json, indent=4, default=str))
             return resp_json
     except Exception as e:
-        logger.error(str(e))
-        return {
-            'status': 'error',
-            'message': str(e)
-        }
+        raise
 
 
 if __name__ == '__main__':
