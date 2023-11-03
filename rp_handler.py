@@ -1,4 +1,3 @@
-import os.path
 import time
 import requests
 import json
