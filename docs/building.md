@@ -4,7 +4,7 @@ You can either build this Docker image yourself, your alternatively,
 you can use my pre-built image:
 
 ```
-ashleykza/runpod-worker-comfyui:1.1.4
+ashleykza/runpod-worker-comfyui:1.1.5
 ```
 
 If you choose to build it yourself:
