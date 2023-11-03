@@ -133,20 +133,23 @@ def handler(event):
 
                 time.sleep(0.2)
 
-            logger.info(f'Images generated successfully for prompt: {prompt_id}')
-            image_filenames = resp_json[prompt_id]['outputs']['9']['images']
-            images = []
+            if len(resp_json[prompt_id]['outputs']):
+                logger.info(f'Images generated successfully for prompt: {prompt_id}')
+                image_filenames = resp_json[prompt_id]['outputs']['9']['images']
+                images = []
 
-            for image_filename in image_filenames:
-                filename = image_filename['filename']
-                image_path = f'{VOLUME_MOUNT_PATH}/ComfyUI/output/{filename}'
+                for image_filename in image_filenames:
+                    filename = image_filename['filename']
+                    image_path = f'{VOLUME_MOUNT_PATH}/ComfyUI/output/{filename}'
 
-                with open(image_path, 'rb') as image_file:
-                    images.append(base64.b64encode(image_file.read()).decode('utf-8'))
+                    with open(image_path, 'rb') as image_file:
+                        images.append(base64.b64encode(image_file.read()).decode('utf-8'))
 
-            return {
-                'images': images
-            }
+                return {
+                    'images': images
+                }
+            else:
+                raise RuntimeError('No output found, please ensure that the model is correct and that it exists')
         else:
             logger.error(f'HTTP Status code: {queue_response.status_code}')
             logger.error(json.dumps(resp_json, indent=4, default=str))
