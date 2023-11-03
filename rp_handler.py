@@ -80,6 +80,12 @@ def get_workflow_payload(workflow_name, payload):
     return workflow
 
 
+def get_filenames(output):
+    for key, value in output.items():
+        if 'images' in value and isinstance(value['images'], list):
+            return value['images']
+
+
 # ---------------------------------------------------------------------------- #
 #                                RunPod Handler                                #
 # ---------------------------------------------------------------------------- #
@@ -135,7 +141,7 @@ def handler(event):
 
             if len(resp_json[prompt_id]['outputs']):
                 logger.info(f'Images generated successfully for prompt: {prompt_id}')
-                image_filenames = resp_json[prompt_id]['outputs']['9']['images']
+                image_filenames = get_filenames(resp_json[prompt_id]['outputs'])
                 images = []
 
                 for image_filename in image_filenames:
