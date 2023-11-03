@@ -67,7 +67,7 @@ cd /workspace/ComfyUI/models/checkpoints
 wget https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned.safetensors
 wget https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
 wget https://huggingface.co/stabilityai/stable-diffusion-xl-refiner-1.0/resolve/main/sd_xl_refiner_1.0.safetensors
-wget -O deliberate_v2.safetensors https://civitai.com/api/download/models/15236
+wget -O deliberate_v2.safetensors https://huggingface.co/XpucT/Deliberate/resolve/main/Deliberate_v2.safetensors
 ```
 4. Download VAEs for SD 1.5 and SDXL:
 ```bash

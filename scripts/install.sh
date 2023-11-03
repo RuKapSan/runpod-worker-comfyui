@@ -40,7 +40,7 @@ cd /workspace/ComfyUI/models/checkpoints
 wget https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned.safetensors
 
 echo "Downloading Deliberate v2 model"
-wget -O deliberate_v2.safetensors https://civitai.com/api/download/models/15236
+wget -O deliberate_v2.safetensors https://huggingface.co/XpucT/Deliberate/resolve/main/Deliberate_v2.safetensors
 
 echo "Downloading SDXL base model"
 wget https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
