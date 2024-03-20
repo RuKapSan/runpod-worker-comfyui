@@ -147,9 +147,8 @@ def handler(event):
             }
         )
 
-        resp_json = queue_response.json()
-
         if queue_response.status_code == 200:
+            resp_json = queue_response.json()
             prompt_id = resp_json['prompt_id']
             logger.info(f'Prompt queued successfully: {prompt_id}', job_id)
 
@@ -182,8 +181,12 @@ def handler(event):
                 raise RuntimeError('No output found, please ensure that the model is correct and that it exists')
         else:
             logger.error(f'HTTP Status code: {queue_response.status_code}', job_id)
-            logger.error(json.dumps(resp_json, indent=4, default=str), job_id)
-            return resp_json
+            logger.error(json.dumps(queue_response.content, indent=4, default=str), job_id)
+
+            return {
+                'error': f'HTTP status code: {queue_response.status_code}',
+                'output': queue_response.content
+            }
     except Exception as e:
         logger.error(f'An exception was raised: {e}', job_id)
 
