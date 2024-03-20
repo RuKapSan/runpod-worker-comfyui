@@ -1,5 +1,6 @@
 import time
 import requests
+import traceback
 import json
 import base64
 import runpod
@@ -70,6 +71,27 @@ def get_txt2img_payload(workflow, payload):
     return workflow
 
 
+def get_img2img_payload(workflow, payload):
+    workflow["13"]["inputs"]["seed"] = payload["seed"]
+    workflow["13"]["inputs"]["steps"] = payload["steps"]
+    workflow["13"]["inputs"]["cfg"] = payload["cfg_scale"]
+    workflow["13"]["inputs"]["sampler_name"] = payload["sampler_name"]
+    workflow["13"]["inputs"]["scheduler"] = payload["scheduler"]
+    workflow["13"]["inputs"]["denoise"] = payload["denoise"]
+    workflow["1"]["inputs"]["ckpt_name"] = payload["ckpt_name"]
+    workflow["2"]["inputs"]["width"] = payload["width"]
+    workflow["2"]["inputs"]["height"] = payload["height"]
+    workflow["2"]["inputs"]["target_width"] = payload["width"]
+    workflow["2"]["inputs"]["target_height"] = payload["height"]
+    workflow["4"]["inputs"]["width"] = payload["width"]
+    workflow["4"]["inputs"]["height"] = payload["height"]
+    workflow["4"]["inputs"]["target_width"] = payload["width"]
+    workflow["4"]["inputs"]["target_height"] = payload["height"]
+    workflow["6"]["inputs"]["text"] = payload["prompt"]
+    workflow["7"]["inputs"]["text"] = payload["negative_prompt"]
+    return workflow
+
+
 def get_workflow_payload(workflow_name, payload):
     with open(f'/workflows/{workflow_name}.json', 'r') as json_file:
         workflow = json.load(json_file)
@@ -90,12 +112,14 @@ def get_filenames(output):
 #                                RunPod Handler                                #
 # ---------------------------------------------------------------------------- #
 def handler(event):
+    job_id = event['id']
+
     try:
         validated_input = validate(event['input'], INPUT_SCHEMA)
 
         if 'errors' in validated_input:
             return {
-                'error': validated_input['errors']
+                'error': '\n'.join(validated_input['errors'])
             }
 
         payload = validated_input['validated_input']
@@ -105,13 +129,13 @@ def handler(event):
         if workflow_name == 'default':
             workflow_name = 'txt2img'
 
-        logger.info(f'Workflow: {workflow_name}')
+        logger.info(f'Workflow: {workflow_name}', job_id)
 
         if workflow_name != 'custom':
             try:
                 payload = get_workflow_payload(workflow_name, payload)
             except Exception as e:
-                logger.error(f'Unable to load workflow payload for: {workflow_name}')
+                logger.error(f'Unable to load workflow payload for: {workflow_name}', job_id)
                 raise
 
         logger.debug('Queuing prompt')
@@ -127,10 +151,10 @@ def handler(event):
 
         if queue_response.status_code == 200:
             prompt_id = resp_json['prompt_id']
-            logger.info(f'Prompt queued successfully: {prompt_id}')
+            logger.info(f'Prompt queued successfully: {prompt_id}', job_id)
 
             while True:
-                logger.debug(f'Getting status of prompt: {prompt_id}')
+                logger.debug(f'Getting status of prompt: {prompt_id}', job_id)
                 r = send_get_request(f'history/{prompt_id}')
                 resp_json = r.json()
 
@@ -140,7 +164,7 @@ def handler(event):
                 time.sleep(0.2)
 
             if len(resp_json[prompt_id]['outputs']):
-                logger.info(f'Images generated successfully for prompt: {prompt_id}')
+                logger.info(f'Images generated successfully for prompt: {prompt_id}', job_id)
                 image_filenames = get_filenames(resp_json[prompt_id]['outputs'])
                 images = []
 
@@ -157,11 +181,16 @@ def handler(event):
             else:
                 raise RuntimeError('No output found, please ensure that the model is correct and that it exists')
         else:
-            logger.error(f'HTTP Status code: {queue_response.status_code}')
-            logger.error(json.dumps(resp_json, indent=4, default=str))
+            logger.error(f'HTTP Status code: {queue_response.status_code}', job_id)
+            logger.error(json.dumps(resp_json, indent=4, default=str), job_id)
             return resp_json
     except Exception as e:
-        raise
+        logger.error(f'An exception was raised: {e}', job_id)
+
+        return {
+            'error': traceback.format_exc(),
+            'refresh_worker': True
+        }
 
 
 if __name__ == '__main__':
