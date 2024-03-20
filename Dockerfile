@@ -52,4 +52,4 @@ COPY workflows /workflows
 
 # Start the container
 RUN chmod +x /start.sh
-ENTRYPOIUNT /start.sh
+ENTRYPOINT /start.sh
