@@ -180,12 +180,13 @@ def handler(event):
             else:
                 raise RuntimeError('No output found, please ensure that the model is correct and that it exists')
         else:
+            queue_response_content = str(queue_response.content)
             logger.error(f'HTTP Status code: {queue_response.status_code}', job_id)
-            logger.error(json.dumps(queue_response.content, indent=4, default=str), job_id)
+            logger.error(queue_response_content, job_id)
 
             return {
                 'error': f'HTTP status code: {queue_response.status_code}',
-                'output': queue_response.content
+                'output': queue_response_content
             }
     except Exception as e:
         logger.error(f'An exception was raised: {e}', job_id)
