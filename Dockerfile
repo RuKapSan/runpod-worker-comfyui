@@ -39,8 +39,8 @@ RUN apt update && \
 RUN ln -s /usr/bin/python3.10 /usr/bin/python
 
 # Install Worker dependencies
-RUN pip install requests runpod
-
+RUN pip install requests runpod comfy_api_simplified websocket-client
+ 
 # Add RunPod Handler and Docker container start script
 COPY start.sh rp_handler.py ./
 

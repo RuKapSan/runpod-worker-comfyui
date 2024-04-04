@@ -1,14 +1,18 @@
-import os
+from random import randint
 import time
+import uuid
 import requests
 import traceback
 import json
 import base64
+
+import websocket
 import runpod
 from runpod.serverless.utils.rp_validator import validate
 from runpod.serverless.modules.rp_logger import RunPodLogger
 from requests.adapters import HTTPAdapter, Retry
 from schemas.input import INPUT_SCHEMA
+from comfy_api_simplified import ComfyApiWrapper, ComfyWorkflowWrapper
 
 
 BASE_URI = 'http://127.0.0.1:3000'
@@ -50,25 +54,72 @@ def send_get_request(endpoint):
         timeout=TIMEOUT
     )
 
+def new_queue_prompt_and_wait(self, prompt: dict) -> str:
+    client_id = str(uuid.uuid4())
+    resp = self.queue_prompt(prompt, client_id)
+    print(resp)
+    prompt_id = resp["prompt_id"]
+    print(f"Connecting to {self.ws_url.format(client_id).split('@')[-1]}")
+    
+    ws = websocket.create_connection(self.ws_url.format(client_id))
+    try:
+        while True:
+            out = ws.recv()
+            if isinstance(out, str):
+                message = json.loads(out)
+                print(message)  # Предполагается, что у вас есть настроенный логгер
+                if message["type"] == "crystools.monitor":
+                    continue
+                if message["type"] == "execution_error":
+                    data = message["data"]
+                    if data["prompt_id"] == prompt_id:
+                        raise Exception("Execution error occurred.")
+                if message["type"] == "status":
+                    data = message["data"]
+                    if data["status"]["exec_info"]["queue_remaining"] == 0:
+                        return prompt_id
+                if message["type"] == "executing":
+                    data = message["data"]
+                    if data["node"] is None and data["prompt_id"] == prompt_id:
+                        return prompt_id
+    finally:
+        ws.close()
 
-def send_post_request(endpoint, payload):
-    return session.post(
-        url=f'{BASE_URI}/{endpoint}',
-        json=payload,
-        timeout=TIMEOUT
-    )
+def new_queue_and_wait_images(self, prompt: dict, output_node_title: str) -> dict:
+    # Предполагается, что вы уже определили метод get_history и get_image соответствующим образом.
+    prompt_id = self.queue_prompt_and_wait(prompt)
+    history = self.get_history(prompt_id)
+    image_node_id = prompt.get_node_id(output_node_title)
+    images = history[prompt_id]["outputs"][image_node_id]["images"]
+    return {
+        image["filename"]: self.get_image(
+            image["filename"], image["subfolder"], image["type"]
+        )
+        for image in images
+    }
+
+
+def send_post_request(payload):
+    
+    api = ComfyApiWrapper(BASE_URI)
+
+    api.queue_and_wait_images = new_queue_and_wait_images.__get__(api, ComfyApiWrapper)
+    api.queue_prompt_and_wait = new_queue_prompt_and_wait.__get__(api, ComfyApiWrapper)
+
+
+    results = api.queue_and_wait_images(payload, "Image Save")
+
+    for filename, image_bytes in results.items():
+        image_bytes = image_bytes
+    
+    return image_bytes
 
 def get_txt2img_payload(workflow, payload):
-    workflow["3"]["inputs"]["seed"] = payload["seed"]
-    workflow["3"]["inputs"]["steps"] = payload["steps"]
-    workflow["3"]["inputs"]["cfg"] = payload["cfg_scale"]
-    workflow["3"]["inputs"]["sampler_name"] = payload["sampler_name"]
-    workflow["4"]["inputs"]["ckpt_name"] = payload["ckpt_name"]
-    workflow["5"]["inputs"]["batch_size"] = payload["batch_size"]
-    workflow["5"]["inputs"]["width"] = payload["width"]
-    workflow["5"]["inputs"]["height"] = payload["height"]
-    workflow["6"]["inputs"]["text"] = payload["prompt"]
-    workflow["7"]["inputs"]["text"] = payload["negative_prompt"]
+    workflow.set_node_param("KSampler", "seed", randint(0, 1000000))
+    logger.debug(payload)
+    logger.debug(type(payload))
+    for value in payload.keys():
+        workflow.set_node_param(value, "Text", payload[value])
     return workflow
 
 
@@ -94,8 +145,8 @@ def get_img2img_payload(workflow, payload):
 
 
 def get_workflow_payload(workflow_name, payload):
-    with open(f'/workflows/{workflow_name}.json', 'r') as json_file:
-        workflow = json.load(json_file)
+
+    workflow = ComfyWorkflowWrapper(f'/workspace/workflows/{workflow_name}.json')
 
     if workflow_name == 'txt2img':
         workflow = get_txt2img_payload(workflow, payload)
@@ -141,61 +192,14 @@ def handler(event):
 
         logger.debug('Queuing prompt')
 
-        queue_response = send_post_request(
-            'prompt',
-            {
-                'prompt': payload
-            }
-        )
+        response = send_post_request(payload)
 
-        if queue_response.status_code == 200:
-            resp_json = queue_response.json()
-            prompt_id = resp_json['prompt_id']
-            logger.info(f'Prompt queued successfully: {prompt_id}', job_id)
+        image=base64.b64encode(response).decode("utf-8")
 
-            while True:
-                logger.debug(f'Getting status of prompt: {prompt_id}', job_id)
-                r = send_get_request(f'history/{prompt_id}')
-                resp_json = r.json()
-
-                if r.status_code == 200 and len(resp_json):
-                    break
-
-                time.sleep(0.2)
-
-            if len(resp_json[prompt_id]['outputs']):
-                logger.info(f'Images generated successfully for prompt: {prompt_id}', job_id)
-                image_filenames = get_filenames(resp_json[prompt_id]['outputs'])
-                images = []
-
-                for image_filename in image_filenames:
-                    filename = image_filename['filename']
-                    image_path = f'{VOLUME_MOUNT_PATH}/ComfyUI/output/{filename}'
-
-                    with open(image_path, 'rb') as image_file:
-                        images.append(base64.b64encode(image_file.read()).decode('utf-8'))
-
-                    logger.info(f'Deleting output file: {image_path}', job_id)
-                    os.remove(image_path)
-
-                return {
-                    'images': images
-                }
-            else:
-                raise RuntimeError('No output found, please ensure that the model is correct and that it exists')
-        else:
-            try:
-                queue_response_content = queue_response.json()
-            except Exception as e:
-                queue_response_content = str(queue_response.content)
-
-            logger.error(f'HTTP Status code: {queue_response.status_code}', job_id)
-            logger.error(queue_response_content, job_id)
-
-            return {
-                'error': f'HTTP status code: {queue_response.status_code}',
-                'output': queue_response_content
-            }
+        return {
+            'image': image
+        }
+    
     except Exception as e:
         logger.error(f'An exception was raised: {e}', job_id)
 
